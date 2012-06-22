@@ -14,6 +14,9 @@ trait Mirror {
 
   def reflect(from : AnyRef) : Map[String,String]
 
+  def reflectOnly[T](from : AnyRef)(implicit m : Manifest[T]) : Map[String,T]
+
   def reflectFromMap(from : Map[String,String] , to : AnyRef) : Int
 
 }
+

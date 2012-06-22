@@ -41,6 +41,12 @@ class ReflectionMirrorTest extends SpecificationWithJUnit {
       a2.name must_== "hoge"
       a2.age must_== 22
     }
+
+    "get only Int" in{
+      val m = mirror.reflectOnly[Int](new A2)
+      m.size must_== 1
+      m("age") must_== 5323
+    }
   }
 
 }
