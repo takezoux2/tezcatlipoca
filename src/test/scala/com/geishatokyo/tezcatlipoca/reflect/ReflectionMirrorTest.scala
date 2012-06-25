@@ -15,7 +15,7 @@ import com.geishatokyo.tezcatlipoca.exception.ConversionException
 class ReflectionMirrorTest extends SpecificationWithJUnit {
 
   "ReflectionMirror#reflect" should{
-    val mirror = new ReflectionMirror(TemplateRegistry())
+    val mirror = new ReflectionMirror(TemplateRegistry.createDefault())
     "reflect object" in{
 
       val a1 = new A1()
@@ -50,8 +50,8 @@ class ReflectionMirrorTest extends SpecificationWithJUnit {
     }
   }
   "ReflectionMirror" should{
-    "ignore error if ignoreConversionError = true" in{
-      val mirror = new ReflectionMirror(TemplateRegistry(),true)
+    "ignore error if ignoreConversionError == true" in{
+      val mirror = new ReflectionMirror(TemplateRegistry.createDefault(),true)
       val a1 = new A1()
       mirror.reflectFromMap(Map("age" -> "hoge"),new A1) must_== 0
 
@@ -59,8 +59,8 @@ class ReflectionMirrorTest extends SpecificationWithJUnit {
       mirror.reflect(new ErrorObj()) must haveSize(0)
 
     }
-    "throw error if ignoreConversionError = false" in{
-      val mirror = new ReflectionMirror(TemplateRegistry(),false)
+    "throw error if ignoreConversionError == false" in{
+      val mirror = new ReflectionMirror(TemplateRegistry.createDefault(),false)
       val a1 = new A1()
       mirror.reflectFromMap(Map("age" -> "hoge"),new A1) must throwA[ConversionException]
       mirror.reflectFromMap(Map("name" -> "hoge"),new ErrorObj()) must throwA[ConversionException]

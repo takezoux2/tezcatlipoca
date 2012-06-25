@@ -27,7 +27,7 @@ class TemplateRegistry {
 }
 
 object TemplateRegistry{
-  def apply() = {
+  def createDefault() = {
     val tr = new TemplateRegistry()
     tr.register(classOf[Int],new IntTemplate)
     tr.register(classOf[Long],new LongTemplate)

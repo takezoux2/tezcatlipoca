@@ -19,7 +19,7 @@ class ReflectionMirror(templateRegistry : TemplateRegistry,ignoreConversionError
 
   val logger = Logger.getLogger("ReflectionMirror")
 
-  def tryConv[T](propName : String)(func : => T) :Option[T] = {
+  private def tryConv[T](propName : String)(func : => T) :Option[T] = {
     try {
       Some(func)
     }catch{
@@ -119,4 +119,4 @@ class ReflectionMirror(templateRegistry : TemplateRegistry,ignoreConversionError
   }
 }
 
-object ReflectionMirror extends ReflectionMirror(TemplateRegistry(),true)
+object ReflectionMirror extends ReflectionMirror(TemplateRegistry.createDefault(),true)
