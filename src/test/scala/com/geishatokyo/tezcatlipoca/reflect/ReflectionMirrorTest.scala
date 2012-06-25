@@ -2,6 +2,7 @@ package com.geishatokyo.tezcatlipoca.reflect
 
 import org.specs2.mutable.SpecificationWithJUnit
 import template.TemplateRegistry
+import com.geishatokyo.tezcatlipoca.exception.ConversionException
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,8 +14,8 @@ import template.TemplateRegistry
 
 class ReflectionMirrorTest extends SpecificationWithJUnit {
 
-  val mirror = new ReflectionMirror(TemplateRegistry())
-  "ReflectionMirror" should{
+  "ReflectionMirror#reflect" should{
+    val mirror = new ReflectionMirror(TemplateRegistry())
     "reflect object" in{
 
       val a1 = new A1()
@@ -48,6 +49,24 @@ class ReflectionMirrorTest extends SpecificationWithJUnit {
       m("age") must_== 5323
     }
   }
+  "ReflectionMirror" should{
+    "ignore error if ignoreConversionError = true" in{
+      val mirror = new ReflectionMirror(TemplateRegistry(),true)
+      val a1 = new A1()
+      mirror.reflectFromMap(Map("age" -> "hoge"),new A1) must_== 0
+
+      mirror.reflectFromMap(Map("name" -> "hoge"),new ErrorObj()) must_== 0
+      mirror.reflect(new ErrorObj()) must haveSize(0)
+
+    }
+    "throw error if ignoreConversionError = false" in{
+      val mirror = new ReflectionMirror(TemplateRegistry(),false)
+      val a1 = new A1()
+      mirror.reflectFromMap(Map("age" -> "hoge"),new A1) must throwA[ConversionException]
+      mirror.reflectFromMap(Map("name" -> "hoge"),new ErrorObj()) must throwA[ConversionException]
+      mirror.reflect(new ErrorObj()) must throwA[ConversionException]
+    }
+  }
 
 }
 
@@ -63,4 +82,10 @@ class A2{
   var age : Int = 5323
   var sex : Byte = 1
 
+}
+
+class ErrorObj{
+
+  def name : String = throw new Exception("Error!")
+  def name_=(v : String) = throw new Exception("Error!")
 }

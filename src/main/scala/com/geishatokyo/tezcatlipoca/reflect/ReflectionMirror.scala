@@ -1,9 +1,12 @@
 package com.geishatokyo.tezcatlipoca.reflect
 
-import com.geishatokyo.tezcatlipoca.Mirror
+import com.geishatokyo.tezcatlipoca.{Mirror}
 import com.geishatokyo.tezcatlipoca.util.{Prop, PropFinder}
 import template.TemplateRegistry
 import com.geishatokyo.tezcatlipoca.template.Template
+import java.util.logging.Logger
+import java.lang.reflect.InvocationTargetException
+import com.geishatokyo.tezcatlipoca.exception.ConversionException
 
 /**
  * Mirror using reflection
@@ -12,7 +15,39 @@ import com.geishatokyo.tezcatlipoca.template.Template
  * Time: 1:58
  */
 
-class ReflectionMirror(templateRegistry : TemplateRegistry) extends Mirror {
+class ReflectionMirror(templateRegistry : TemplateRegistry,ignoreConversionError : Boolean = true) extends Mirror {
+
+  val logger = Logger.getLogger("ReflectionMirror")
+
+  def tryConv[T](propName : String)(func : => T) :Option[T] = {
+    try {
+      Some(func)
+    }catch{
+      case e : InvocationTargetException => {
+        e.getCause match{
+          case ie : Exception => {
+            logger.info("Fail to convert property:%s.Exception %s".format(propName,ie.getMessage))
+          }
+          case _ => {
+            logger.info("Fail to convert property:%s.Exception %s".format(propName,e.getMessage))
+          }
+        }
+        if (ignoreConversionError){
+          None
+        } else {
+          throw new ConversionException(propName,e)
+        }
+      }
+      case e : Exception => {
+        logger.info("Fail to convert property:%s.Exception %s".format(propName,e.getMessage))
+        if (ignoreConversionError){
+          None
+        } else {
+          throw new ConversionException(propName,e)
+        }
+      }
+    }
+  }
 
   def reflect(from: AnyRef, to: AnyRef) = {
     val fromProps = PropFinder.getProps(from.getClass)
@@ -22,8 +57,10 @@ class ReflectionMirror(templateRegistry : TemplateRegistry) extends Mirror {
       case (name,p) => toProps.get(name) match{
         case Some(toProp) => {
           if (toProp.propType == p.propType){
-            count += 1
-            toProp.setter.invoke(to,p.getter.invoke(from))
+            tryConv(name){
+              toProp.setter.invoke(to,p.getter.invoke(from))
+              count += 1
+            }
           }
         }
         case None =>
@@ -34,10 +71,13 @@ class ReflectionMirror(templateRegistry : TemplateRegistry) extends Mirror {
 
   def reflect(from: AnyRef) = {
     val props = PropFinder.getProps(from.getClass)
-    props.collect({
+    props.flatMap({
       case HasTemplate(prop,template) => {
-        prop.name -> template.toString( prop.getter.invoke(from))
+        tryConv[(String,String)](prop.name){
+          prop.name -> template.toString( prop.getter.invoke(from))
+        }
       }
+      case _ => None
     }).toMap
   }
 
@@ -55,10 +95,10 @@ class ReflectionMirror(templateRegistry : TemplateRegistry) extends Mirror {
     val props = PropFinder.getProps(to.getClass)
     var count = 0
     props.foreach({
-      case HasTemplate(prop,template) if from.contains(prop.name) => {
+      case HasTemplate(prop,template) if from.contains(prop.name) => tryConv(prop.name){
         val name = prop.name
-        count += 1
         prop.setter.invoke(to,template.fromString(from(name)).asInstanceOf[AnyRef])
+        count += 1
       }
       case _ =>
     })
@@ -68,12 +108,15 @@ class ReflectionMirror(templateRegistry : TemplateRegistry) extends Mirror {
   def reflectOnly[T](from: AnyRef)(implicit m : Manifest[T]) : Map[String, T] = {
 
     val props = PropFinder.getProps(from.getClass)
-    props.collect({
+    props.flatMap({
       case (name,prop) if prop.propType == m.erasure=> {
-        prop.name -> prop.getter.invoke(from).asInstanceOf[T]
+        tryConv[(String,T)](prop.name){
+          prop.name -> prop.getter.invoke(from).asInstanceOf[T]
+        }
       }
+      case _ => None
     }).toMap
   }
 }
 
-object ReflectionMirror extends ReflectionMirror(TemplateRegistry())
+object ReflectionMirror extends ReflectionMirror(TemplateRegistry(),true)
