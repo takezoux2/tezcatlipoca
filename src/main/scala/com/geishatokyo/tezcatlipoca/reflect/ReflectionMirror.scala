@@ -1,6 +1,6 @@
 package com.geishatokyo.tezcatlipoca.reflect
 
-import com.geishatokyo.tezcatlipoca.{Mirror}
+import com.geishatokyo.tezcatlipoca.Mirror
 import com.geishatokyo.tezcatlipoca.util.{Prop, PropFinder}
 import template.TemplateRegistry
 import com.geishatokyo.tezcatlipoca.template.Template
