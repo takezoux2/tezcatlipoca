@@ -15,15 +15,8 @@ import java.lang.reflect.Modifier
 object PropFinder {
 
 
-  val propRepo = new HashMap[Class[_],Map[String,Prop]]() with SynchronizedMap[Class[_],Map[String,Prop]]
 
-  def getProps(clazz : Class[_]) = {
-    propRepo.getOrElseUpdate(clazz,{
-      listUpProps(clazz)
-    })
-  }
-
-  def listUpProps( clazz : Class[_]) = {
+  def listUpProps( clazz : Class[_]) : Seq[Prop] = {
     val methods = clazz.getMethods
     val maybeSetters = methods.withFilter(m => {
       Modifier.isPublic(m.getModifiers) &&
@@ -37,9 +30,18 @@ object PropFinder {
       Modifier.isPublic(m.getModifiers) &&
       m.getParameterTypes().length == 0 &&
       maybeSetters.contains(m.getName + ":" + m.getReturnType.getName)
-    }).map( m => {
-      m.getName -> Prop(m,maybeSetters(m.getName + ":" + m.getReturnType.getName))
-    }).toMap
+    }).map( getter => {
+      val name = getter.getName
+      val field = try{
+        // TODO if field is overrided ,search super class field.
+        Some(clazz.getDeclaredField(name))
+      }catch{
+        case e : NoSuchFieldException => {
+          None
+        }
+      }
+      Prop(getter,maybeSetters(name + ":" + getter.getReturnType.getName),field)
+    }).toSeq
 
   }
 

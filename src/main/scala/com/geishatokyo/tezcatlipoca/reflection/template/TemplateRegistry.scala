@@ -1,4 +1,4 @@
-package com.geishatokyo.tezcatlipoca.reflect.template
+package com.geishatokyo.tezcatlipoca.reflection.template
 
 import com.geishatokyo.tezcatlipoca.template._
 import collection.mutable.{SynchronizedMap, HashMap}
